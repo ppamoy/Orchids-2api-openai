@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  orchids-api:
+    build: .
+    container_name: orchids-api
+    restart: unless-stopped
+    ports:
+      - "3002:3002"
+    environment:
+      - PORT=3002
+      - DEBUG_ENABLED=true
+      - ADMIN_USER=${ADMIN_USER:-admin}
+      - ADMIN_PASS=${ADMIN_PASS:-admin123}
+      - ADMIN_PATH=${ADMIN_PATH:-/admin}
+    volumes:
+      - ./data:/app/data
+      - ./debug:/app/debug
