@@ -69,6 +69,8 @@ func main() {
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("/v1/messages", h.HandleMessages)
+	mux.HandleFunc("/v1/chat/completions", h.HandleOpenAIChat)
+	mux.HandleFunc("/v1/models", h.HandleOpenAIModels)
 
 	mux.HandleFunc("/api/accounts", middleware.BasicAuth(cfg.AdminUser, cfg.AdminPass, apiHandler.HandleAccounts))
 	mux.HandleFunc("/api/accounts/", middleware.BasicAuth(cfg.AdminUser, cfg.AdminPass, apiHandler.HandleAccountByID))
