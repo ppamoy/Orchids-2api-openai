@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Orchids API 测试页面</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f5f5f5;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 30px;
+        }
+        
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #3498db;
+        }
+        
+        .tab {
+            padding: 12px 24px;
+            background: #ecf0f1;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        
+        .tab.active {
+            background: #3498db;
+            color: white;
+        }
+        
+        .tab-content {
+            display: none;
+            background: white;
+            padding: 24px;
+            border-radius: 0 0 8px 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #555;
+        }
+        
+        input[type="text"],
+        textarea,
+        select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.3s ease;
+        }
+        
+        input[type="text"]:focus,
+        textarea:focus,
+        select:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+        }
+        
+        textarea {
+            resize: vertical;
+            min-height: 150px;
+        }
+        
+        .btn {
+            display: inline-block;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary {
+            background: #3498db;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #2980b9;
+            transform: translateY(-1px);
+        }
+        
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+        
+        .response-container {
+            margin-top: 24px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            border-left: 4px solid #3498db;
+        }
+        
+        .response-header {
+            font-weight: 500;
+            margin-bottom: 12px;
+            color: #2c3e50;
+        }
+        
+        .response-content {
+            white-space: pre-wrap;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        
+        .image-preview {
+            margin-top: 20px;
+            max-width: 100%;
+            border-radius: 6px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .video-preview {
+            margin-top: 20px;
+            max-width: 100%;
+            border-radius: 6px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(52, 152, 219, 0.3);
+            border-radius: 50%;
+            border-top-color: #3498db;
+            animation: spin 1s ease-in-out infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .loading-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .error {
+            color: #e74c3c;
+            margin-top: 10px;
+            font-size: 14px;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .tabs {
+                flex-direction: column;
+            }
+            
+            .tab {
+                border-bottom: 1px solid #ddd;
+            }
+            
+            .tab-content {
+                padding: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Orchids API 测试页面</h1>
+        
+        <div class="tabs">
+            <button class="tab active" data-tab="chat">文字聊天</button>
+            <button class="tab" data-tab="image">图片生成</button>
+            <button class="tab" data-tab="video">视频生成</button>
+        </div>
+        
+        <!-- 文字聊天标签 -->
+        <div class="tab-content active" id="chat">
+            <div class="form-group">
+                <label for="chat-model">模型</label>
+                <select id="chat-model">
+                    <option value="claude-opus-4-5">Claude Opus 4.5</option>
+                    <option value="claude-sonnet-4-5">Claude Sonnet 4.5</option>
+                    <option value="gpt-4o">GPT-4o</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="chat-prompt">提示词</label>
+                <textarea id="chat-prompt" placeholder="请输入您的问题或对话内容..."></textarea>
+            </div>
+            
+            <div class="form-group">
+                <label for="chat-stream">流式响应</label>
+                <select id="chat-stream">
+                    <option value="true">是</option>
+                    <option value="false">否</option>
+                </select>
+            </div>
+            
+            <button class="btn btn-primary" onclick="testChat()">发送请求</button>
+            
+            <div id="chat-loading" class="loading-container" style="display: none;">
+                <div class="loading"></div>
+                <span>处理中...</span>
+            </div>
+            
+            <div class="error" id="chat-error"></div>
+            
+            <div class="response-container" id="chat-response" style="display: none;">
+                <div class="response-header">响应结果：</div>
+                <div class="response-content" id="chat-response-content"></div>
+            </div>
+        </div>
+        
+        <!-- 图片生成标签 -->
+        <div class="tab-content" id="image">
+            <div class="form-group">
+                <label for="image-prompt">提示词</label>
+                <textarea id="image-prompt" placeholder="请描述您想要生成的图片内容..."></textarea>
+            </div>
+            
+            <div class="form-group">
+                <label for="image-size">尺寸</label>
+                <select id="image-size">
+                    <option value="1024x1024">1024x1024</option>
+                    <option value="1024x1536">1024x1536</option>
+                    <option value="1536x1024">1536x1024</option>
+                </select>
+            </div>
+            
+            <button class="btn btn-primary" onclick="testImage()">生成图片</button>
+            
+            <div id="image-loading" class="loading-container" style="display: none;">
+                <div class="loading"></div>
+                <span>生成中...</span>
+            </div>
+            
+            <div class="error" id="image-error"></div>
+            
+            <div class="response-container" id="image-response" style="display: none;">
+                <div class="response-header">响应结果：</div>
+                <div class="response-content" id="image-response-content"></div>
+                <img id="image-preview" class="image-preview" src="" alt="生成的图片" style="display: none;">
+            </div>
+        </div>
+        
+        <!-- 视频生成标签 -->
+        <div class="tab-content" id="video">
+            <div class="form-group">
+                <label for="video-prompt">提示词</label>
+                <textarea id="video-prompt" placeholder="请描述您想要生成的视频内容..."></textarea>
+            </div>
+            
+            <div class="form-group">
+                <label for="video-size">尺寸</label>
+                <select id="video-size">
+                    <option value="1024x1024">1024x1024</option>
+                    <option value="1024x1536">1024x1536</option>
+                    <option value="1536x1024">1536x1024</option>
+                </select>
+            </div>
+            
+            <button class="btn btn-primary" onclick="testVideo()">生成视频</button>
+            
+            <div id="video-loading" class="loading-container" style="display: none;">
+                <div class="loading"></div>
+                <span>生成中...</span>
+            </div>
+            
+            <div class="error" id="video-error"></div>
+            
+            <div class="response-container" id="video-response" style="display: none;">
+                <div class="response-header">响应结果：</div>
+                <div class="response-content" id="video-response-content"></div>
+                <video id="video-preview" class="video-preview" controls style="display: none;">
+                    <source src="" type="video/mp4">
+                    您的浏览器不支持视频播放。
+                </video>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // API 基础 URL
+        const API_BASE_URL = 'http://192.168.1.201:3002';
+        
+        // 标签切换功能
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                // 移除所有标签的活动状态
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                
+                // 添加当前标签的活动状态
+                tab.classList.add('active');
+                const tabId = tab.getAttribute('data-tab');
+                document.getElementById(tabId).classList.add('active');
+            });
+        });
+        
+        // 文字聊天测试
+        function testChat() {
+            const model = document.getElementById('chat-model').value;
+            const prompt = document.getElementById('chat-prompt').value;
+            const stream = document.getElementById('chat-stream').value === 'true';
+            
+            if (!prompt) {
+                document.getElementById('chat-error').textContent = '请输入提示词';
+                return;
+            }
+            
+            // 重置状态
+            document.getElementById('chat-error').textContent = '';
+            document.getElementById('chat-response').style.display = 'none';
+            document.getElementById('chat-loading').style.display = 'flex';
+            
+            // 构建请求数据
+            const data = {
+                model: model,
+                messages: [
+                    {
+                        role: 'user',
+                        content: prompt
+                    }
+                ],
+                stream: stream
+            };
+            
+            if (stream) {
+                // 流式响应处理
+                fetch(`${API_BASE_URL}/v1/chat/completions`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    
+                    const reader = response.body.getReader();
+                    const decoder = new TextDecoder();
+                    let responseText = '';
+                    
+                    function processChunk({ done, value }) {
+                        if (done) {
+                            document.getElementById('chat-loading').style.display = 'none';
+                            document.getElementById('chat-response-content').textContent = responseText;
+                            document.getElementById('chat-response').style.display = 'block';
+                            return;
+                        }
+                        
+                        const chunk = decoder.decode(value, { stream: true });
+                        const lines = chunk.split('\n');
+                        
+                        lines.forEach(line => {
+                            if (line.startsWith('data: ')) {
+                                const data = line.substring(6);
+                                if (data === '[DONE]') {
+                                    return;
+                                }
+                                
+                                try {
+                                    const event = JSON.parse(data);
+                                    if (event.choices && event.choices[0].delta && event.choices[0].delta.content) {
+                                        responseText += event.choices[0].delta.content;
+                                        document.getElementById('chat-response-content').textContent = responseText;
+                                        document.getElementById('chat-response').style.display = 'block';
+                                    }
+                                } catch (e) {
+                                    console.error('解析SSE数据失败:', e);
+                                }
+                            }
+                        });
+                        
+                        return reader.read().then(processChunk);
+                    }
+                    
+                    return reader.read().then(processChunk);
+                })
+                .catch(error => {
+                    document.getElementById('chat-loading').style.display = 'none';
+                    document.getElementById('chat-error').textContent = `错误: ${error.message}`;
+                });
+            } else {
+                // 非流式响应处理
+                fetch(`${API_BASE_URL}/v1/chat/completions`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(result => {
+                    document.getElementById('chat-loading').style.display = 'none';
+                    document.getElementById('chat-response-content').textContent = JSON.stringify(result, null, 2);
+                    document.getElementById('chat-response').style.display = 'block';
+                })
+                .catch(error => {
+                    document.getElementById('chat-loading').style.display = 'none';
+                    document.getElementById('chat-error').textContent = `错误: ${error.message}`;
+                });
+            }
+        }
+        
+        // 图片生成测试
+        function testImage() {
+            const prompt = document.getElementById('image-prompt').value;
+            const size = document.getElementById('image-size').value;
+            
+            if (!prompt) {
+                document.getElementById('image-error').textContent = '请输入提示词';
+                return;
+            }
+            
+            // 重置状态
+            document.getElementById('image-error').textContent = '';
+            document.getElementById('image-response').style.display = 'none';
+            document.getElementById('image-preview').style.display = 'none';
+            document.getElementById('image-loading').style.display = 'flex';
+            
+            // 构建请求数据
+            const data = {
+                prompt: prompt,
+                size: size,
+                n: 1
+            };
+            
+            fetch(`${API_BASE_URL}/v1/images/generations`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(result => {
+                document.getElementById('image-loading').style.display = 'none';
+                document.getElementById('image-response-content').textContent = JSON.stringify(result, null, 2);
+                document.getElementById('image-response').style.display = 'block';
+                
+                // 显示生成的图片
+                if (result.data && result.data[0] && result.data[0].url) {
+                    document.getElementById('image-preview').src = result.data[0].url;
+                    document.getElementById('image-preview').style.display = 'block';
+                }
+            })
+            .catch(error => {
+                document.getElementById('image-loading').style.display = 'none';
+                document.getElementById('image-error').textContent = `错误: ${error.message}`;
+            });
+        }
+        
+        // 视频生成测试
+        function testVideo() {
+            const prompt = document.getElementById('video-prompt').value;
+            const size = document.getElementById('video-size').value;
+            
+            if (!prompt) {
+                document.getElementById('video-error').textContent = '请输入提示词';
+                return;
+            }
+            
+            // 重置状态
+            document.getElementById('video-error').textContent = '';
+            document.getElementById('video-response').style.display = 'none';
+            document.getElementById('video-preview').style.display = 'none';
+            document.getElementById('video-loading').style.display = 'flex';
+            
+            // 构建请求数据
+            const data = {
+                prompt: prompt,
+                size: size,
+                n: 1
+            };
+            
+            fetch(`${API_BASE_URL}/v1/videos/generations`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(result => {
+                document.getElementById('video-loading').style.display = 'none';
+                document.getElementById('video-response-content').textContent = JSON.stringify(result, null, 2);
+                document.getElementById('video-response').style.display = 'block';
+                
+                // 显示生成的视频
+                if (result.data && result.data[0] && result.data[0].url) {
+                    const videoPreview = document.getElementById('video-preview');
+                    videoPreview.src = result.data[0].url;
+                    videoPreview.style.display = 'block';
+                }
+            })
+            .catch(error => {
+                document.getElementById('video-loading').style.display = 'none';
+                document.getElementById('video-error').textContent = `错误: ${error.message}`;
+            });
+        }
+    </script>
+</body>
+</html>

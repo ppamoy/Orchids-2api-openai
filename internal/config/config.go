@@ -17,6 +17,7 @@ type Config struct {
 	AdminUser    string
 	AdminPass    string
 	AdminPath    string
+	OpenAIKey    string
 }
 
 func Load() *Config {
@@ -33,6 +34,7 @@ func Load() *Config {
 		AdminUser:    getEnv("ADMIN_USER", "admin"),
 		AdminPass:    getEnv("ADMIN_PASS", "admin123"),
 		AdminPath:    getEnv("ADMIN_PATH", "/admin"),
+		OpenAIKey:    getEnv("OPENAI_KEY", ""),
 	}
 }
 

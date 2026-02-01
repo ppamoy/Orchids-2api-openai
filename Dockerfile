@@ -1,29 +1,25 @@
-FROM golang:1.22-alpine AS builder
+FROM golang:1.24-alpine AS builder
 
 WORKDIR /app
-
-RUN apk add --no-cache gcc musl-dev
 
 COPY go.mod go.sum ./
 RUN go mod download
 
 COPY . .
 
-RUN CGO_ENABLED=1 GOOS=linux go build -o server ./cmd/server
+RUN go build -o orchids-api ./cmd/server
 
-FROM alpine:latest
+FROM alpine:3.20
 
 WORKDIR /app
 
-RUN apk add --no-cache ca-certificates
-
-COPY --from=builder /app/server .
-COPY --from=builder /app/web ./web
-
-COPY --from=builder /app/data ./data
-
-RUN mkdir -p /app/debug
+COPY --from=builder /app/orchids-api /app/
+COPY --from=builder /app/data /app/data/
+COPY --from=builder /app/web /app/web/
 
 EXPOSE 3002
 
-CMD ["./server"]
+ENV PORT=3002
+ENV DEBUG_ENABLED=false
+
+CMD ["./orchids-api"]

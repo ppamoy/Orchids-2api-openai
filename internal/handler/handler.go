@@ -44,6 +44,7 @@ func New(cfg *config.Config) *Handler {
 func NewWithLoadBalancer(cfg *config.Config, lb *loadbalancer.LoadBalancer) *Handler {
 	return &Handler{
 		config:       cfg,
+		client:       client.New(cfg),
 		loadBalancer: lb,
 	}
 }

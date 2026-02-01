@@ -71,6 +71,8 @@ func main() {
 	mux.HandleFunc("/v1/messages", h.HandleMessages)
 	mux.HandleFunc("/v1/chat/completions", h.HandleOpenAIChat)
 	mux.HandleFunc("/v1/models", h.HandleOpenAIModels)
+	mux.HandleFunc("/v1/images/generations", h.HandleOpenAIImages)
+	mux.HandleFunc("/v1/videos/generations", h.HandleOpenAIVideos)
 
 	mux.HandleFunc("/api/accounts", middleware.BasicAuth(cfg.AdminUser, cfg.AdminPass, apiHandler.HandleAccounts))
 	mux.HandleFunc("/api/accounts/", middleware.BasicAuth(cfg.AdminUser, cfg.AdminPass, apiHandler.HandleAccountByID))
@@ -79,6 +81,9 @@ func main() {
 
 	mux.HandleFunc(cfg.AdminPath+"/", middleware.BasicAuthHandler(cfg.AdminUser, cfg.AdminPass, http.StripPrefix(cfg.AdminPath, web.StaticHandler())))
 
+	// 公共静态文件访问
+	mux.Handle("/static/", http.StripPrefix("/static/", web.StaticHandler()))
+
 	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.Write([]byte(`{"status":"ok"}`))
@@ -86,7 +91,11 @@ func main() {
 
 	log.Printf("Server running on port %s", cfg.Port)
 	log.Printf("Admin UI: http://localhost:%s%s", cfg.Port, cfg.AdminPath)
-	if err := http.ListenAndServe(":"+cfg.Port, mux); err != nil {
+	
+	// 应用CORS中间件到所有路由
+	handler := middleware.CORS(mux)
+	
+	if err := http.ListenAndServe(":"+cfg.Port, handler); err != nil {
 		log.Fatal(err)
 	}
 }

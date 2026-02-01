@@ -467,3 +467,199 @@ func (h *Handler) HandleOpenAIModels(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(models)
 }
+
+// OpenAIImageRequest OpenAI 图像生成请求格式
+type OpenAIImageRequest struct {
+	Prompt string `json:"prompt"`
+	N      int    `json:"n,omitempty"`
+	Size   string `json:"size,omitempty"`
+}
+
+// OpenAIImageResponse OpenAI 图像生成响应格式
+type OpenAIImageResponse struct {
+	Created int64             `json:"created"`
+	Data    []OpenAIImageData `json:"data"`
+}
+
+type OpenAIImageData struct {
+	URL string `json:"url"`
+}
+
+// HandleOpenAIImages 处理 /v1/images/generations 请求
+func (h *Handler) HandleOpenAIImages(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var req OpenAIImageRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	if req.Prompt == "" {
+		http.Error(w, "Prompt is required", http.StatusBadRequest)
+		return
+	}
+
+	// 选择账号
+	var apiClient *client.Client
+	var failedAccountIDs []int64
+
+	selectAccount := func() error {
+		if h.loadBalancer != nil {
+			account, err := h.loadBalancer.GetNextAccountExcluding(failedAccountIDs)
+			if err != nil {
+				if h.client != nil {
+					apiClient = h.client
+					return nil
+				}
+				return err
+			}
+			log.Printf("使用账号: %s (%s)", account.Name, account.Email)
+			apiClient = client.NewFromAccount(account)
+			return nil
+		} else if h.client != nil {
+			apiClient = h.client
+			return nil
+		}
+		return fmt.Errorf("no client configured")
+	}
+
+	if err := selectAccount(); err != nil {
+		http.Error(w, err.Error(), http.StatusServiceUnavailable)
+		return
+	}
+
+	// 设置默认值
+	size := req.Size
+	if size == "" {
+		size = "1024x1024"
+	}
+
+	// 生成图像
+	imageURL, err := apiClient.GenerateImage(r.Context(), req.Prompt, size)
+	if err != nil {
+		log.Printf("Error generating image: %v", err)
+		// 尝试使用其他账号
+		if h.loadBalancer != nil {
+			if err := selectAccount(); err == nil {
+				imageURL, err = apiClient.GenerateImage(r.Context(), req.Prompt, size)
+			}
+		}
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	}
+
+	// 构建响应
+	response := OpenAIImageResponse{
+		Created: time.Now().Unix(),
+		Data:    []OpenAIImageData{{URL: imageURL}},
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
+
+	log.Printf("Image generated: %s", imageURL)
+}
+
+// OpenAIVideoRequest OpenAI 视频生成请求格式
+type OpenAIVideoRequest struct {
+	Prompt string `json:"prompt"`
+	N      int    `json:"n,omitempty"`
+	Size   string `json:"size,omitempty"`
+}
+
+// OpenAIVideoResponse OpenAI 视频生成响应格式
+type OpenAIVideoResponse struct {
+	Created int64             `json:"created"`
+	Data    []OpenAIVideoData `json:"data"`
+}
+
+type OpenAIVideoData struct {
+	URL string `json:"url"`
+}
+
+// HandleOpenAIVideos 处理 /v1/videos/generations 请求
+func (h *Handler) HandleOpenAIVideos(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var req OpenAIVideoRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	if req.Prompt == "" {
+		http.Error(w, "Prompt is required", http.StatusBadRequest)
+		return
+	}
+
+	// 选择账号
+	var apiClient *client.Client
+	var failedAccountIDs []int64
+
+	selectAccount := func() error {
+		if h.loadBalancer != nil {
+			account, err := h.loadBalancer.GetNextAccountExcluding(failedAccountIDs)
+			if err != nil {
+				if h.client != nil {
+					apiClient = h.client
+					return nil
+				}
+				return err
+			}
+			log.Printf("使用账号: %s (%s)", account.Name, account.Email)
+			apiClient = client.NewFromAccount(account)
+			return nil
+		} else if h.client != nil {
+			apiClient = h.client
+			return nil
+		}
+		return fmt.Errorf("no client configured")
+	}
+
+	if err := selectAccount(); err != nil {
+		http.Error(w, err.Error(), http.StatusServiceUnavailable)
+		return
+	}
+
+	// 设置默认值
+	size := req.Size
+	if size == "" {
+		size = "1024x1024"
+	}
+
+	// 生成视频
+	videoURL, err := apiClient.GenerateVideo(r.Context(), req.Prompt, size)
+	if err != nil {
+		log.Printf("Error generating video: %v", err)
+		// 尝试使用其他账号
+		if h.loadBalancer != nil {
+			if err := selectAccount(); err == nil {
+				videoURL, err = apiClient.GenerateVideo(r.Context(), req.Prompt, size)
+			}
+		}
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	}
+
+	// 构建响应
+	response := OpenAIVideoResponse{
+		Created: time.Now().Unix(),
+		Data:    []OpenAIVideoData{{URL: videoURL}},
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
+
+	log.Printf("Video generated: %s", videoURL)
+}

@@ -233,3 +233,109 @@ func (c *Client) SendRequest(ctx context.Context, prompt string, chatHistory []i
 
 	return nil
 }
+
+func (c *Client) GenerateImage(ctx context.Context, prompt string, size string) (string, error) {
+	token, err := c.GetToken()
+	if err != nil {
+		return "", fmt.Errorf("failed to get token: %w", err)
+	}
+
+	payload := map[string]interface{}{
+		"prompt": prompt,
+		"size":   size,
+		"n":      1,
+	}
+
+	body, err := json.Marshal(payload)
+	if err != nil {
+		return "", err
+	}
+
+	req, err := http.NewRequestWithContext(ctx, "POST", upstreamURL, bytes.NewReader(body))
+	if err != nil {
+		return "", err
+	}
+
+	req.Header.Set("Authorization", "Bearer "+token)
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-Orchids-Api-Version", "2")
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return "", fmt.Errorf("upstream request failed with status %d: %s", resp.StatusCode, string(body))
+	}
+
+	var response map[string]interface{}
+	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
+		return "", err
+	}
+
+	if data, ok := response["data"].([]interface{}); ok && len(data) > 0 {
+		if item, ok := data[0].(map[string]interface{}); ok {
+			if url, ok := item["url"].(string); ok {
+				return url, nil
+			}
+		}
+	}
+
+	return "", fmt.Errorf("invalid response format")
+}
+
+func (c *Client) GenerateVideo(ctx context.Context, prompt string, size string) (string, error) {
+	token, err := c.GetToken()
+	if err != nil {
+		return "", fmt.Errorf("failed to get token: %w", err)
+	}
+
+	payload := map[string]interface{}{
+		"prompt": prompt,
+		"size":   size,
+		"n":      1,
+	}
+
+	body, err := json.Marshal(payload)
+	if err != nil {
+		return "", err
+	}
+
+	req, err := http.NewRequestWithContext(ctx, "POST", upstreamURL, bytes.NewReader(body))
+	if err != nil {
+		return "", err
+	}
+
+	req.Header.Set("Authorization", "Bearer "+token)
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-Orchids-Api-Version", "2")
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return "", fmt.Errorf("upstream request failed with status %d: %s", resp.StatusCode, string(body))
+	}
+
+	var response map[string]interface{}
+	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
+		return "", err
+	}
+
+	if data, ok := response["data"].([]interface{}); ok && len(data) > 0 {
+		if item, ok := data[0].(map[string]interface{}); ok {
+			if url, ok := item["url"].(string); ok {
+				return url, nil
+			}
+		}
+	}
+
+	return "", fmt.Errorf("invalid response format")
+}

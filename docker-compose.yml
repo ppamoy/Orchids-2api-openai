@@ -1,18 +1,18 @@
-version: '3.8'
-
+version: '3'
 services:
   orchids-api:
     build: .
-    container_name: orchids-api
-    restart: unless-stopped
     ports:
       - "3002:3002"
     environment:
       - PORT=3002
-      - DEBUG_ENABLED=true
-      - ADMIN_USER=${ADMIN_USER:-admin}
-      - ADMIN_PASS=${ADMIN_PASS:-admin123}
-      - ADMIN_PATH=${ADMIN_PATH:-/admin}
+      - DEBUG_ENABLED=false
+      - OPENAI_KEY=${OPENAI_KEY}
     volumes:
       - ./data:/app/data
-      - ./debug:/app/debug
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3002/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
